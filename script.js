@@ -4,11 +4,11 @@ const timerDisplay = document.getElementById('timer');
 const gameOverDisplay = document.getElementById('game-over');
 const promptMessage = document.getElementById('prompt-message');
 
-// 🌟モバイル操作UIの要素を取得🌟
-const leftButton = document.getElementById('left-button');
-const rightButton = document.getElementById('right-button');
-const jumpButton = document.getElementById('jump-button');
-// 🌟モバイル操作UIの要素を取得 終わり🌟
+// 🌟削除: モバイル操作UIの要素を取得する行を削除🌟
+// const leftButton = document.getElementById('left-button');
+// const rightButton = document.getElementById('right-button');
+// const jumpButton = document.getElementById('jump-button');
+// 🌟削除 終わり🌟
 
 // プレイヤーの初期位置を空中（中央上部）に設定
 // 🌟修正: 初期位置を画面中央付近に変更🌟
@@ -116,7 +116,7 @@ function resetGame() {
 }
 
 
-// キーが押された状態を記録
+// キーが押された状態を記録 (PCキーボードのみ)
 document.addEventListener('keydown', (e) => {
     keys[e.key.toLowerCase()] = true;
 
@@ -153,7 +153,7 @@ function startGame() {
     }
 }
 
-// キーが離された状態を記録
+// キーが離された状態を記録 (PCキーボードのみ)
 document.addEventListener('keyup', (e) => {
     keys[e.key.toLowerCase()] = false;
     if (e.key === ' ') {
@@ -162,63 +162,10 @@ document.addEventListener('keyup', (e) => {
 });
 
 
-// 🌟修正: モバイル操作イベントリスナーの修正🌟
-
-// 動作操作イベントを抽象化
-function setupMobileControl(button, key, isJump = false) {
-    if (!button) return;
-
-    const startAction = (e) => {
-        // 🌟重要: touchstartでpreventDefault()を呼び出し、ボタン操作によるスクロール/ズームを防止🌟
-        // この行がないと、タッチ操作がボタンとして認識されず、カーソルも反応しません。
-        if (e.cancelable) e.preventDefault();
-
-        keys[key] = true; // 'a' or 'd' or ' '
-
-        if (isJump) {
-            // ジャンプキーが押されたことを示す
-            if (!jumpKeyHeld) {
-                // 初めて押された時だけジャンプを開始（連打防止ロジック）
-                isJumping = true;
-                velocityY = jumpStrength;
-
-                if (!gameStarted) {
-                    startGame();
-                }
-            }
-            jumpKeyHeld = true;
-        }
-    };
-
-    const stopAction = () => {
-        keys[key] = false;
-
-        if (isJump) {
-            // キーが離されたら jumpKeyHeld をリセット
-            jumpKeyHeld = false;
-        }
-    };
-
-    // タッチイベント (スマホ/タブレット用)
-    // 🌟修正: passive: false を設定し、preventDefaultを確実に機能させる🌟
-    button.addEventListener('touchstart', startAction, { passive: false });
-    button.addEventListener('touchend', stopAction);
-    button.addEventListener('touchcancel', stopAction); // 指が離れたり、画面外に出た場合もキー状態をリセット
-
-    // マウスイベント (PCでのテスト用)
-    button.addEventListener('mousedown', startAction);
-    button.addEventListener('mouseup', stopAction);
-    button.addEventListener('mouseleave', stopAction);
-}
-
-// 各ボタンに設定を適用
-setupMobileControl(leftButton, 'a');
-setupMobileControl(rightButton, 'd');
-setupMobileControl(jumpButton, ' ', true); // ジャンプボタンは特別なロジックを適用
-// 🌟モバイル操作イベントリスナーの修正 終わり🌟
+// 🌟削除: モバイル操作イベントリスナーの修正 (setupMobileControl関数と呼び出し)を削除🌟
 
 
-// ゲームコントローラー関連のコード...
+// ゲームコントローラー関連のコード... (そのまま維持)
 
 window.addEventListener('gamepadconnected', (e) => {
     console.log('Gamepad connected!');
@@ -298,11 +245,12 @@ function updatePlayerPosition() {
         let horizontalInput = 0;
         let jumpButtonPushed = false;
 
-        // キーボード/モバイルボタン入力
+        // キーボード入力 (A, Dキー)
         if (keys['a'] || keys['d']) {
             horizontalInput = keys['d'] ? 1 : -1;
         }
 
+        // ゲームコントローラー入力
         if (gamepad) {
             gamepad = navigator.getGamepads()[gamepad.index];
             if (Math.abs(gamepad.axes[0]) > 0.1) {
@@ -316,21 +264,17 @@ function updatePlayerPosition() {
             }
         }
 
-        // スペースキーまたはモバイルジャンプボタンが押されている
-        if (jumpButtonPushed) {
-            isJumping = true;
-            velocityY = jumpStrength;
-            startGame();
-            // jumpKeyHeld は setupMobileControl/keydownで既にtrueになっている
+        // スペースキーまたはコントローラAボタンが押されている
+        if (keys[' '] && !jumpKeyHeld) {
+            jumpButtonPushed = true;
         }
-
-
+        
         // 🌟修正: 無限ジャンプに戻すため、jumpCountのチェックを削除🌟
         if (jumpButtonPushed) {
             isJumping = true;
             velocityY = jumpStrength;
             startGame();
-            // jumpKeyHeld は setupMobileControl/keydownで既にtrueになっている
+            jumpKeyHeld = true; // キーボード/コントローラでの再ジャンプ防止
         }
 
         playerX += horizontalInput * 0.5;
@@ -353,7 +297,7 @@ function updatePlayerPosition() {
 
     acceleration *= airControl;
 
-    // キーボード/モバイルボタン入力 (keys['a']とkeys['d']の同時押しは相殺される)
+    // キーボード入力 (keys['a']とkeys['d']の同時押しは相殺される)
     if (keys['a']) {
         horizontalInput = -1;
     }
@@ -380,7 +324,7 @@ function updatePlayerPosition() {
             jumpKeyHeld = false;
         }
     }
-
+    
     // 移動ロジック
     if (horizontalInput !== 0) {
         velocityX += horizontalInput * acceleration;
@@ -424,11 +368,8 @@ function updatePlayerPosition() {
 
         const retryButton = document.getElementById('retry-button');
         if (retryButton) {
-            // 🌟修正: クリック（タップ）でリトライ処理を実行
-            retryButton.onclick = () => {
-                resetGame();
-                gameLoop();
-            };
+            // 🌟修正: PC専用にするため、onclickイベントは削除。Enter/Xボタンでのリトライのみ対応。
+            retryButton.onclick = null;
         }
         return;
     }
@@ -438,7 +379,8 @@ function updatePlayerPosition() {
 }
 
 function gameLoop(timestamp) {
-    // 縦画面チェック
+    // 🌟削除: 縦画面チェックのロジックを全て削除🌟
+    /*
     const orientationMessage = document.getElementById('orientation-message');
     const mobileControls = document.querySelector('.mobile-controls');
 
@@ -449,9 +391,9 @@ function gameLoop(timestamp) {
     } else {
         orientationMessage.style.display = 'none';
         gameContainer.style.display = 'block';
-        // モバイルコントロールはCSSで制御されていますが、念のためflexに戻します
         if (mobileControls) mobileControls.style.display = 'flex';
     }
+    */
 
 
     // フレームレート制御
@@ -464,6 +406,7 @@ function gameLoop(timestamp) {
     if (gameOver) {
         if (gamepad) {
             gamepad = navigator.getGamepads()[gamepad.index];
+            // コントローラXボタン (buttons[2]) でリトライ
             if (gamepad.buttons[2].pressed) {
                 resetGame();
                 gameLoopId = requestAnimationFrame(gameLoop);
