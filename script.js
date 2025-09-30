@@ -89,8 +89,8 @@ function resetGame() {
     lastSpeedIncreaseTime = 0;
 
     // プレイヤーの位置をリセット
-    playerX = gameContainer.offsetWidth / 2;
     // 🌟修正: 初期位置を画面中央付近に変更🌟
+    playerX = gameContainer.offsetWidth / 2;
     playerY = gameContainer.offsetHeight / 2;
     isJumping = false;
     velocityY = 0;
@@ -424,6 +424,7 @@ function updatePlayerPosition() {
 
         const retryButton = document.getElementById('retry-button');
         if (retryButton) {
+            // 🌟修正: クリック（タップ）でリトライ処理を実行
             retryButton.onclick = () => {
                 resetGame();
                 gameLoop();
