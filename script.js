@@ -11,12 +11,12 @@ const jumpButton = document.getElementById('jump-button');
 // 🌟モバイル操作UIの要素を取得 終わり🌟
 
 // プレイヤーの初期位置を空中（中央上部）に設定
+// 🌟修正: 初期位置を画面中央付近に変更🌟
 let playerX = gameContainer.offsetWidth / 2;
-let playerY = gameContainer.offsetHeight / 3;
+let playerY = gameContainer.offsetHeight / 2;
 let isJumping = false;
 let velocityY = 0;
-const gravity = -1.5;
-// ★修正: ジャンプ力を17から14に落とす★
+const gravity = -1.5; // 🌟重力はそのまま維持🌟
 const jumpStrength = 14;
 
 // プレイヤーの速度を管理する変数
@@ -30,7 +30,8 @@ const airControl = 0.7;
 const horizontalBounceStrength = 120; // 左右の弾き力 (元より弱めに設定)
 const verticalBounceStrength = 20;
 
-let jumpCount = 0;
+// 🌟修正: jumpCountを削除し、無限ジャンプを可能にする🌟
+// let jumpCount = 0;
 
 const keys = {};
 let jumpKeyHeld = false;
@@ -89,11 +90,12 @@ function resetGame() {
 
     // プレイヤーの位置をリセット
     playerX = gameContainer.offsetWidth / 2;
-    playerY = gameContainer.offsetHeight / 3;
+    // 🌟修正: 初期位置を画面中央付近に変更🌟
+    playerY = gameContainer.offsetHeight / 2;
     isJumping = false;
     velocityY = 0;
     velocityX = 0;
-    jumpCount = 0;
+    // 🌟修正: jumpCountを削除🌟
     player.style.left = `${playerX}px`;
     player.style.bottom = `${playerY}px`;
 
@@ -119,11 +121,10 @@ document.addEventListener('keydown', (e) => {
     keys[e.key.toLowerCase()] = true;
 
     if (e.key === ' ') {
-        // 🌟ジャンプ処理に、空中にいない（またはジャンプ回数が0）という条件を追加🌟
-        if (!jumpKeyHeld && jumpCount === 0) {
+        // 🌟修正: 無限ジャンプに戻すため、jumpCountのチェックを削除🌟
+        if (!jumpKeyHeld) {
             isJumping = true;
             velocityY = jumpStrength;
-            jumpCount++;
 
             // ジャンプ開始時のみゲーム開始
             if (!gameStarted) {
@@ -161,59 +162,60 @@ document.addEventListener('keyup', (e) => {
 });
 
 
-// 🌟モバイル操作イベントリスナーの追加🌟
-if (leftButton) {
-    const startLeft = () => { keys['a'] = true; };
-    const stopLeft = () => { keys['a'] = false; };
-    leftButton.addEventListener('touchstart', startLeft);
-    leftButton.addEventListener('touchend', stopLeft);
-    leftButton.addEventListener('mousedown', startLeft);
-    leftButton.addEventListener('mouseup', stopLeft);
-    leftButton.addEventListener('mouseleave', stopLeft); // マウス操作時のフェイルセーフ
-}
+// 🌟修正: モバイル操作イベントリスナーの修正🌟
 
-if (rightButton) {
-    const startRight = () => { keys['d'] = true; };
-    const stopRight = () => { keys['d'] = false; };
-    rightButton.addEventListener('touchstart', startRight);
-    rightButton.addEventListener('touchend', stopRight);
-    rightButton.addEventListener('mousedown', startRight);
-    rightButton.addEventListener('mouseup', stopRight);
-    rightButton.addEventListener('mouseleave', stopRight); // マウス操作時のフェイルセーフ
-}
+// 動作操作イベントを抽象化
+function setupMobileControl(button, key, isJump = false) {
+    if (!button) return;
 
-if (jumpButton) {
-    const handleJump = () => {
-        // ジャンプキーの物理的な押下状態をシミュレート
-        if (!jumpKeyHeld && jumpCount === 0) { // 🌟空中にいない（またはジャンプ回数が0）時のみジャンプ可能🌟
-            isJumping = true;
-            velocityY = jumpStrength;
-            jumpCount++;
-            
-            if (!gameStarted) {
-                startGame();
+    const startAction = (e) => {
+        // 🌟重要: touchstartでpreventDefault()を呼び出し、ボタン操作によるスクロール/ズームを防止🌟
+        // この行がないと、タッチ操作がボタンとして認識されず、カーソルも反応しません。
+        if (e.cancelable) e.preventDefault();
+
+        keys[key] = true; // 'a' or 'd' or ' '
+
+        if (isJump) {
+            // ジャンプキーが押されたことを示す
+            if (!jumpKeyHeld) {
+                // 初めて押された時だけジャンプを開始（連打防止ロジック）
+                isJumping = true;
+                velocityY = jumpStrength;
+
+                if (!gameStarted) {
+                    startGame();
+                }
             }
+            jumpKeyHeld = true;
         }
-        jumpKeyHeld = true;
     };
 
-    const handleJumpEnd = () => {
-        jumpKeyHeld = false;
+    const stopAction = () => {
+        keys[key] = false;
+
+        if (isJump) {
+            // キーが離されたら jumpKeyHeld をリセット
+            jumpKeyHeld = false;
+        }
     };
 
-    // タッチイベント
-    jumpButton.addEventListener('touchstart', (e) => {
-        e.preventDefault(); // スクロールなどを防止
-        handleJump();
-    });
-    jumpButton.addEventListener('touchend', handleJumpEnd);
+    // タッチイベント (スマホ/タブレット用)
+    // 🌟修正: passive: false を設定し、preventDefaultを確実に機能させる🌟
+    button.addEventListener('touchstart', startAction, { passive: false });
+    button.addEventListener('touchend', stopAction);
+    button.addEventListener('touchcancel', stopAction); // 指が離れたり、画面外に出た場合もキー状態をリセット
 
     // マウスイベント (PCでのテスト用)
-    jumpButton.addEventListener('mousedown', handleJump);
-    jumpButton.addEventListener('mouseup', handleJumpEnd);
-    jumpButton.addEventListener('mouseleave', handleJumpEnd);
+    button.addEventListener('mousedown', startAction);
+    button.addEventListener('mouseup', stopAction);
+    button.addEventListener('mouseleave', stopAction);
 }
-// 🌟モバイル操作イベントリスナーの追加 終わり🌟
+
+// 各ボタンに設定を適用
+setupMobileControl(leftButton, 'a');
+setupMobileControl(rightButton, 'd');
+setupMobileControl(jumpButton, ' ', true); // ジャンプボタンは特別なロジックを適用
+// 🌟モバイル操作イベントリスナーの修正 終わり🌟
 
 
 // ゲームコントローラー関連のコード...
@@ -294,9 +296,9 @@ function updatePlayerPosition() {
     // ゲーム未開始時の処理
     if (!gameStarted) {
         let horizontalInput = 0;
-        let jumpButtonPushed = false; // ジャンプボタンが押されたかを記録するフラグ
+        let jumpButtonPushed = false;
 
-        // キーボード入力
+        // キーボード/モバイルボタン入力
         if (keys['a'] || keys['d']) {
             horizontalInput = keys['d'] ? 1 : -1;
         }
@@ -313,20 +315,22 @@ function updatePlayerPosition() {
                 jumpKeyHeld = false;
             }
         }
-        
-        // 🌟モバイルボタンでのジャンプ処理を統合🌟
-        if (keys[' ']) { // スペースキーまたはモバイルジャンプボタンが押されている
-             jumpButtonPushed = true;
+
+        // スペースキーまたはモバイルジャンプボタンが押されている
+        if (jumpButtonPushed) {
+            isJumping = true;
+            velocityY = jumpStrength;
+            startGame();
+            // jumpKeyHeld は setupMobileControl/keydownで既にtrueになっている
         }
 
 
-        // ジャンプキーまたはコントローラのAボタンが押されたらゲーム開始
-        if (jumpButtonPushed && jumpCount === 0) { // 🌟jumpCount === 0 の条件を追加🌟
+        // 🌟修正: 無限ジャンプに戻すため、jumpCountのチェックを削除🌟
+        if (jumpButtonPushed) {
             isJumping = true;
             velocityY = jumpStrength;
-            jumpCount++;
             startGame();
-            jumpKeyHeld = true; // 押された状態を保持
+            // jumpKeyHeld は setupMobileControl/keydownで既にtrueになっている
         }
 
         playerX += horizontalInput * 0.5;
@@ -334,7 +338,7 @@ function updatePlayerPosition() {
 
         // 画面端の壁判定（ゲーム未開始時のみ）
         playerX = Math.max(0, Math.min(playerX, gameContainer.offsetWidth - player.offsetWidth));
-        
+
         player.style.left = `${playerX}px`;
         player.style.bottom = `${playerY}px`;
         updatePromptPosition();
@@ -349,12 +353,14 @@ function updatePlayerPosition() {
 
     acceleration *= airControl;
 
-    // キーボード/モバイルボタン入力
+    // キーボード/モバイルボタン入力 (keys['a']とkeys['d']の同時押しは相殺される)
     if (keys['a']) {
         horizontalInput = -1;
-    } else if (keys['d']) {
+    }
+    if (keys['d']) {
         horizontalInput = 1;
     }
+    // 両方押されている場合は0になる
 
     // ゲームコントローラーからの入力
     if (gamepad) {
@@ -365,10 +371,10 @@ function updatePlayerPosition() {
         }
 
         // コントローラAボタンでのジャンプ処理
-        if (gamepad.buttons[0].pressed && !jumpKeyHeld && jumpCount === 0) { // 🌟jumpCount === 0 の条件を追加🌟
+        // 🌟修正: 無限ジャンプに戻すため、jumpCountのチェックを削除🌟
+        if (gamepad.buttons[0].pressed && !jumpKeyHeld) {
             isJumping = true;
             velocityY = jumpStrength;
-            jumpCount++;
             jumpKeyHeld = true;
         } else if (!gamepad.buttons[0].pressed) {
             jumpKeyHeld = false;
@@ -431,24 +437,20 @@ function updatePlayerPosition() {
 }
 
 function gameLoop(timestamp) {
-    // 🌟縦画面チェック🌟
+    // 縦画面チェック
     const orientationMessage = document.getElementById('orientation-message');
-    if (orientationMessage) {
-        if (window.matchMedia("(orientation: portrait)").matches) {
-            orientationMessage.style.display = 'block';
-            gameContainer.style.display = 'none';
-            // モバイル操作UIも非表示にする
-            const mobileControls = document.querySelector('.mobile-controls');
-            if (mobileControls) mobileControls.style.display = 'none';
-        } else {
-            orientationMessage.style.display = 'none';
-            gameContainer.style.display = 'block';
-            // モバイル操作UIを表示 (CSSで制御しているため、ここでは明示的な表示は不要な場合が多いが念のため)
-            const mobileControls = document.querySelector('.mobile-controls');
-            if (mobileControls) mobileControls.style.display = 'flex';
-        }
+    const mobileControls = document.querySelector('.mobile-controls');
+
+    if (window.matchMedia("(orientation: portrait)").matches) {
+        orientationMessage.style.display = 'block';
+        gameContainer.style.display = 'none';
+        if (mobileControls) mobileControls.style.display = 'none';
+    } else {
+        orientationMessage.style.display = 'none';
+        gameContainer.style.display = 'block';
+        // モバイルコントロールはCSSで制御されていますが、念のためflexに戻します
+        if (mobileControls) mobileControls.style.display = 'flex';
     }
-    // 🌟縦画面チェック 終わり🌟
 
 
     // フレームレート制御
@@ -503,14 +505,14 @@ function gameLoop(timestamp) {
         // プレイヤーの重力とジャンプの処理
         playerY += velocityY;
         velocityY += gravity;
-        
-        // 🌟床に接触したかの判定とジャンプ回数のリセット🌟
-        if (playerY <= 0) {
-            playerY = 0;
-            velocityY = 0;
-            jumpCount = 0; // 地面に触れたらジャンプ回数をリセット
-            isJumping = false;
-        }
+
+        // 🌟修正: 地面への接触判定とジャンプ回数のリセットを削除 (無限ジャンプ/地面なし)🌟
+        // if (playerY <= 0) {
+        //     playerY = 0;
+        //     velocityY = 0;
+        //     jumpCount = 0; 
+        //     isJumping = false;
+        // }
 
         // 弾の移動と衝突判定
         const bullets = document.querySelectorAll('.bullet');
@@ -544,13 +546,13 @@ function gameLoop(timestamp) {
                     const normalizedX = dx / distance;
                     const normalizedY = dy / distance;
 
-                    // 修正箇所: 左右はhorizontalBounceStrength、上下はverticalBounceStrengthを使用
+                    // 左右はhorizontalBounceStrength、上下はverticalBounceStrengthを使用
                     velocityX = normalizedX * horizontalBounceStrength;
                     velocityY = normalizedY * verticalBounceStrength;
 
                     isJumping = true;
-                    jumpCount = 1; // 吹き飛ばされたら空中にいる状態に
-                    
+                    // 🌟修正: jumpCountを削除🌟
+
                     bullet.remove();
                 }
             }

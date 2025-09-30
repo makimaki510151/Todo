@@ -1,12 +1,19 @@
 body {
     margin: 0;
-    overflow: hidden; /* スクロールバーを非表示にする */
+    overflow: hidden;
+    /* スクロールバーを非表示にする */
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
     background-color: #222;
     font-family: 'Arial', sans-serif;
+    /* 画面全体の文字選択を無効化 */
+    user-select: none;
+    -webkit-user-select: none;
+    /* Safari対応 */
+    touch-action: manipulation;
+    /* タッチ遅延を減らす */
 }
 
 #game-container {
@@ -15,38 +22,40 @@ body {
     background-color: #333;
     border: 2px solid #fff;
     position: relative;
-    overflow: hidden; /* プレイヤーや弾がコンテナ外に出るのを防ぐ */
+    overflow: hidden;
+    /* プレイヤーや弾がコンテナ外に出るのを防ぐ */
 }
 
-/* 🌟レスポンシブデザインの追加🌟 */
-@media screen and (max-width: 1300px) and (max-height: 900px) {
+/* 🌟修正: レスポンシブデザインの調整🌟 */
+@media screen and (max-width: 1300px),
+screen and (max-height: 900px) {
     #game-container {
         width: 100vw;
         height: 100vh;
+        max-width: 1280px;
+        max-height: 850px;
         border: none;
     }
-    /* スマホで操作しやすいようにプロンプトメッセージを小さくする */
+
     .message-prompt {
         font-size: 14px;
         padding: 4px 8px;
     }
 }
-/* 🌟レスポンシブデザインの追加 終わり🌟 */
-
 
 /* 背景テキストのスタイル */
 #background-text {
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%) rotate(-15deg); /* 中央に配置し、少し回転させる */
-    font-size: 120px; /* 大きなフォントサイズ */
+    transform: translate(-50%, -50%) rotate(-15deg);
+    font-size: 120px;
     font-weight: bold;
-    color: rgba(255, 255, 255, 0.1); /* 薄い白色で透過させる */
-    pointer-events: none; /* クリックやマウスイベントを透過させる */
-    user-select: none; /* テキスト選択を無効にする */
-    z-index: 0; /* 他の要素より奥に配置 */
-    white-space: nowrap; /* テキストが改行されないようにする */
+    color: rgba(255, 255, 255, 0.1);
+    pointer-events: none;
+    user-select: none;
+    z-index: 0;
+    white-space: nowrap;
 }
 
 #player {
@@ -57,8 +66,8 @@ body {
     bottom: 0;
     left: 50%;
     transform: translateX(-50%);
-    transition: transform 0.1s ease-out; /* 向きの変更をスムーズに */
-    z-index: 1; /* 背景テキストより手前に配置 */
+    transition: transform 0.1s ease-out;
+    z-index: 1;
 }
 
 /* アニメーション */
@@ -75,13 +84,23 @@ body {
 }
 
 @keyframes idleAnimation {
-    0% { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="%2300f"/><text x="20" y="26" font-family="Arial" font-size="20" text-anchor="middle" fill="%23fff">立</text></svg>'); }
-    50% { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="%2300f"/><text x="20" y="26" font-family="Arial" font-size="20" text-anchor="middle" fill="%23fff">立</text></svg>'); }
+    0% {
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="%2300f"/><text x="20" y="26" font-family="Arial" font-size="20" text-anchor="middle" fill="%23fff">立</text></svg>');
+    }
+
+    50% {
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="%2300f"/><text x="20" y="26" font-family="Arial" font-size="20" text-anchor="middle" fill="%23fff">立</text></svg>');
+    }
 }
 
 @keyframes walkAnimation {
-    0% { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="%2300f"/><text x="20" y="26" font-family="Arial" font-size="20" text-anchor="middle" fill="%23fff">歩</text></svg>'); }
-    50% { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="%2300f"/><text x="20" y="26" font-family="Arial" font-size="20" text-anchor="middle" fill="%23fff">歩</text></svg>'); }
+    0% {
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="%2300f"/><text x="20" y="26" font-family="Arial" font-size="20" text-anchor="middle" fill="%23fff">歩</text></svg>');
+    }
+
+    50% {
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="%2300f"/><text x="20" y="26" font-family="Arial" font-size="20" text-anchor="middle" fill="%23fff">歩</text></svg>');
+    }
 }
 
 #timer {
@@ -113,7 +132,7 @@ body {
     border-radius: 10px;
     text-align: center;
     font-size: 30px;
-    display: none; /* 初期状態では非表示 */
+    display: none;
     z-index: 100;
 }
 
@@ -128,10 +147,8 @@ body {
     border-radius: 5px;
 }
 
-/* プレイヤー近くに表示するメッセージのスタイル */
 .message-prompt {
     position: absolute;
-    /* 位置はJavaScriptで制御 */
     background-color: rgba(0, 0, 0, 0.6);
     color: #fff;
     padding: 5px 10px;
@@ -139,35 +156,39 @@ body {
     font-size: 16px;
     font-weight: bold;
     text-align: center;
-    pointer-events: none; /* マウスイベントを透過させる */
-    z-index: 80; 
+    pointer-events: none;
+    z-index: 80;
 }
 
 /* 🌟モバイル操作UIのスタイル🌟 */
 .mobile-controls {
-    position: absolute;
+    position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 150px; /* 操作エリアの高さ */
-    z-index: 90;
-    pointer-events: none; /* 全体を非透過にする */
+    height: 150px;
+    /* 🌟修正: pointer-events: none; を削除し、ボタン操作を許可🌟 */
+    /* pointer-events: none;  <-- ここはコメントアウトでOKです */
     display: flex;
     justify-content: space-between;
-    padding: 0 20px;
+    padding: 0 5vw;
     box-sizing: border-box;
+    z-index: 100;
 }
 
 .mobile-dpad {
     display: flex;
-    gap: 10px;
-    pointer-events: auto; /* ボタンは操作可能にする */
+    gap: 5vw;
+    pointer-events: auto;
+    align-items: flex-end;
     margin-bottom: 20px;
 }
 
 .mobile-button {
-    width: 80px;
-    height: 80px;
+    width: 15vw;
+    height: 15vw;
+    max-width: 80px;
+    max-height: 80px;
     border-radius: 50%;
     background-color: rgba(255, 255, 255, 0.2);
     color: #fff;
@@ -177,13 +198,22 @@ body {
     justify-content: center;
     align-items: center;
     user-select: none;
+    -webkit-user-select: none;
     cursor: pointer;
+    /* 🌟修正: カーソル変化を明示🌟 */
     border: 2px solid rgba(255, 255, 255, 0.5);
     transition: background-color 0.1s;
+    touch-action: manipulation;
 }
 
 .mobile-button:active {
     background-color: rgba(255, 255, 255, 0.5);
+}
+
+.mobile-jump-area {
+    align-items: flex-end;
+    margin-bottom: 20px;
+    pointer-events: auto;
 }
 
 /* 縦画面誘導メッセージ */
@@ -200,18 +230,24 @@ body {
     padding-top: 50vh;
     transform: translateY(-50%);
     box-sizing: border-box;
-    display: none; /* 初期は非表示 */
+    display: none;
     z-index: 200;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 @media (orientation: portrait) {
+
     /* 縦画面の場合、メッセージを表示 */
     #orientation-message {
         display: block;
     }
-    /* 縦画面の場合、ゲーム全体を非表示 */
-    #game-container, .mobile-controls {
+
+    /* 縦画面の場合、ゲーム全体とコントロールを非表示 */
+    #game-container,
+    .mobile-controls {
         display: none;
     }
 }
+
 /* 🌟モバイル操作UIのスタイル 終わり🌟 */
